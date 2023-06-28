@@ -1,0 +1,57 @@
+#define Relay 13
+#define buzzer A0
+static const int sensorPin = 10;
+int SensorStatePrevious = LOW;
+unsigned long minSensorDuration = 3000;
+unsigned long minSensorDuration2 = 6000;
+unsigned long SensorLongMillis;
+bool SensorStateLongTime = false;
+const int intervalSensor = 50;
+unsigned long previousSensorMillis;
+unsigned long SensorOutDuration;
+unsigned long currentMillis;
+void setup() {
+ Serial.begin(9600);
+pinMode(sensorPin, INPUT);
+ Serial.println("Press button");
+ pinMode(Relay,OUTPUT);
+ pinMode(buzzer,OUTPUT);
+}
+void readSensorState() {
+ if(currentMillis - previousSensorMillis > intervalSensor) {
+ int SensorState = digitalRead(sensorPin);
+if (SensorState == LOW && SensorStatePrevious == HIGH &&
+!SensorStateLongTime) {
+ SensorLongMillis = currentMillis;
+ SensorStatePrevious = LOW;
+
+ Serial.println("Button pressed");
+ }
+ SensorOutDuration = currentMillis - SensorLongMillis;
+ if (SensorState == LOW && !SensorStateLongTime && SensorOutDuration >=
+minSensorDuration) {
+ SensorStateLongTime = true;
+ digitalWrite(Relay,HIGH);
+ Serial.println("Button long pressed");
+ }
+ if (SensorState == LOW && SensorStateLongTime && SensorOutDuration >=
+minSensorDuration2) {
+ SensorStateLongTime = true;
+digitalWrite(buzzer,HIGH);
+ delay(1000);
+ Serial.println("Button long pressed");
+ }
+ if (SensorState == HIGH && SensorStatePrevious == LOW) {
+ SensorStatePrevious = HIGH;
+ SensorStateLongTime = false;
+ digitalWrite(Relay,LOW);
+ digitalWrite(buzzer,LOW);
+ Serial.println("Button released");
+ }
+ previousSensorMillis = currentMillis;
+ }
+}
+void loop() {
+ currentMillis = millis();
+ readSensorState();
+}
